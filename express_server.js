@@ -35,15 +35,25 @@ app.get("/urls/new", (req, res) => {
 });
 
 app.get("/urls/:id", (req, res) => {
+  console.log(req.params)
   const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id] };
   res.render("urls_show", templateVars);
 });
 
-app.post("/urls", (req, res) => {
-  console.log(req.body); // Log the POST request body to the console
-  res.send("Ok"); // Respond with 'Ok' (we will replace this)
+app.get("/u/:id", (req, res) => {
+   const longURL = urlDatabase[req.params.id]
+ res.redirect(longURL);
 });
 
+app.post("/urls", (req, res) => {
+  console.log(req.body); // Log the POST request body to the console
+  // WHOLE POINT OF THIS IS TO SAVE A LONG URL- TO THE URL DATABASE
+  const randomString = generateRandomString()
+  const longURL = req.body.longURL
+  urlDatabase[randomString] = longURL
+ res.redirect(`/urls/${randomString}`)
+ 
+});
 
 
 app.listen(PORT, () => {
