@@ -10,20 +10,15 @@
       <div class="navbar-nav">
         <a class="nav-item nav-link" href="/urls">My URLs</a>
         <a class="nav-item nav-link" href="/urls/new">Create New URL</a>
-        <a class="nav-item nav-link" href="#">Login</a>
+        <a class="nav-item nav-link" href="/register">Register</a>
+        <a class="nav-item nav-link" href="/login">Login</a>
         <% if(user){ %>
-          <h2> you are signed in as <%= user.email %>
+          <h2> signed in as <%= user.email %>
           </h2>
           <form method="POST" action="/logout">
             <button type="submit">Logout</button>
           </form>
-          <% } else{ %>
-            <form method="POST" action="/login">
-
-              <input type="text" name="username" placeholder="username">
-
-              <button type="submit">Login</button>
-            </form>
+          
             <% } %>
       </div>
     </div>

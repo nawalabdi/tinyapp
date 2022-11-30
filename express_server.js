@@ -31,6 +31,15 @@ const users = {
   },
 };
 
+const userLookup = function (email) {
+  for (const item in users) {
+    if (email === users[item].email) {
+      return users[item]
+    }
+  }
+  return null
+}
+
 app.get("/", (req, res) => {
   res.send("Hello!");
 });
@@ -61,9 +70,11 @@ app.get("/urls/new", (req, res) => {
 
 app.get("/urls/:id", (req, res) => {
   console.log(req.params)
-  const templateVars = { id: req.params.id, 
+  const templateVars = {
+    id: req.params.id,
     longURL: urlDatabase[req.params.id],
-    user: users[req.cookies.user_id] };
+    user: users[req.cookies.user_id]
+  };
   res.render("urls_show", templateVars);
 });
 
@@ -95,12 +106,24 @@ app.post("/urls/:id/", (req, res) => {
 })
 
 app.post("/login", (req, res) => {
-  console.log(req.body);
-  const userName = req.body.username
-  res.cookie("user_id", userName) // create function
-  console.log(userName)
-  res.redirect("/urls")
-})
+  // check for the email in the database
+  //if email is not found return 403 error
+  //if email found check for password 
+  // if password matches do line 127
+  // else throw 403 error 
+  const user = userLookup(req.body.email)
+  console.log(user)
+  if (!user) {
+    return res.send(403)
+  } else if (req.body.password === user.password) {
+    res.cookie("user_id", user.id);
+    res.redirect("/urls")
+  }
+  else {
+    return res.send(403);
+
+  }
+});
 
 app.post("/logout", (req, res) => {
   console.log(req.body);
@@ -117,19 +140,41 @@ app.get("/register", (req, res) => {
 });
 
 app.post("/register", (req, res) => {
-  console.log(req.body);
+  let user = userLookup(req.body.email)
+  console.log(user);
+  if (req.body.email === "" || req.body.password === "") {
+    return res.send(400)
+  }
+  if (user) {
+    return res.send("Email already registered", 400)
+
+  }
   const randomUserID = generateRandomString()
-  
-  let newUser = 
-    {id: randomUserID,
+
+  let newUser =
+  {
+    id: randomUserID,
     email: req.body.email,
     password: req.body.password
   }
   users[randomUserID] = newUser
-  res.cookie("user_id" , randomUserID)
+  res.cookie("user_id", randomUserID)
   res.redirect("/urls")
   console.log(users)
-})
+
+
+}
+)
+app.get("/login", (req, res) => {
+
+
+  const templateVars =
+  {
+    user: users[req.cookies.user_id]
+  }
+  res.render("urls_login", templateVars);
+});
+
 
 
 app.listen(PORT, () => {
