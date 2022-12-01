@@ -13,9 +13,26 @@ function generateRandomString() {
   return (Math.random().toString(36).substr(2, 6))
 }
 
+
 const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
+  b6UTxQ: {
+    longURL: "https://www.tsn.ca",
+    userID: "aJ48lW",
+  },
+  i3BoGr: {
+    longURL: "https://www.google.ca",
+    userID: "aJ48lW",
+  },
+  i65oGr: {
+    longURL: "https://www.google.ca",
+    userID: "aJxdlW",
+  },
+  i3BoGr: {
+    longURL: "https://www.google.ca",
+    userID: "aJ48lW",
+  },
+
+
 };
 
 const users = {
@@ -50,6 +67,17 @@ const getUserFromReq = function (req) {
 
 }
 
+const urlsForUser = function (id) {
+  const result = {}
+  for (const user in urlDatabase) {
+    if (id === urlDatabase[user].userID) {
+      result[user] = urlDatabase[user]
+    }
+  }
+  return result
+}
+
+
 app.get("/", (req, res) => {
   res.send("Hello!");
 });
@@ -64,6 +92,11 @@ app.get("/hello", (req, res) => {
 
 app.get("/urls", (req, res) => {
   const user = getUserFromReq(req)
+  if (!user) {
+    res.send("please log in to view")
+    return
+  }
+  const urlDatabase = urlsForUser(req.cookies.user_id)
 
   const templateVars = {
     urls: urlDatabase,
@@ -87,12 +120,21 @@ app.get("/urls/new", (req, res) => {
 });
 
 app.get("/urls/:id", (req, res) => {
-  const longURL = urlDatabase[req.params.id]
-  console.log(req.params)
-  if (!longURL) {
-    res.send ("url doesnt exist")
-    return
+  const user = getUserFromReq(req)
+  if (!user) {
+    return res.send("Error, please login to access")
+
   }
+  if (urlDatabase[req.params.id].userID !== req.cookies.user_id) {
+    return res.send("This URL doesnt belong to you")
+
+  }
+  const longURL = urlDatabase[req.params.id].longURL;
+  if (!longURL) {
+    return res.send("url doesnt exist")
+  }
+
+
   const templateVars = {
     id: req.params.id,
     longURL: longURL,
@@ -107,13 +149,12 @@ app.post("/urls", (req, res) => {
   console.log(req.body);
   const randomString = generateRandomString()
   if (!user) {
-    res.send("Please log in to create new url ")
+    res.send("Please log in or register to see URL's")
     return
   }
-
-
   const longURL = req.body.longURL
-  urlDatabase[randomString] = longURL
+  const userID = req.cookies.user_id
+  urlDatabase[randomString] = { longURL, userID };
   res.redirect(`/urls/${randomString}`)
 
 });
@@ -121,28 +162,44 @@ app.post("/urls", (req, res) => {
 app.get("/u/:id", (req, res) => {
   const longURL = urlDatabase[req.params.id]
   if (!longURL) {
-    res.send ("Short URL does not exist")
+    res.send("Short URL does not exist")
     return
   }
   res.redirect(longURL);
 });
 
 app.post("/urls/:id/delete", (req, res) => {
-  
+
   if (!urlDatabase[req.params.id]) {
-    res.send ("URL does not exist")
+    res.status(400).send("URL does not exist")
     return
   }
+  if (!req.cookies.user_id) {
+    return res.status(401).send("Your not logged in")
+  }
+  if (urlDatabase[req.params.id].userID !== req.cookies.user_id) {
+    return res.status(403).send("This URL doesnt belong to you")
 
+  }
+ 
   delete urlDatabase[req.params.id];
   res.redirect("/urls")
 })
+
 app.post("/urls/:id/", (req, res) => {
   if (!urlDatabase[req.params.id]) {
-    res.send ("URL does not exist")
+    res.status(400).send("URL does not exist")
     return
   }
-  urlDatabase[req.params.id] = req.body.updatedUrl;
+  if (!req.cookies.user_id) {
+    return res.status(401).send("Your not logged in")
+  }
+  if (urlDatabase[req.params.id].userID !== req.cookies.user_id) {
+    return res.status(403).send("This URL doesnt belong to you")
+
+  }
+
+  urlDatabase[req.params.id].longURL = req.body.updatedUrl
   res.redirect("/urls")
 })
 
@@ -150,7 +207,7 @@ app.post("/login", (req, res) => {
   const user = userLookup(req.body.email)
   console.log(user)
   if (!user) {
-    return res.send("no user found with that email")
+   return res.status(400).send("no user found with that email")
   } else if (req.body.password === user.password) {
     res.cookie("user_id", user.id);
     res.redirect("/urls")
