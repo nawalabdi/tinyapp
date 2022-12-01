@@ -40,6 +40,16 @@ const userLookup = function (email) {
   return null
 }
 
+const getUserFromReq = function (req) {
+  const userID = req.cookies.user_id
+  const user = users[userID]
+  if (!user) {
+    return null
+  }
+  return user
+
+}
+
 app.get("/", (req, res) => {
   res.send("Hello!");
 });
@@ -53,26 +63,39 @@ app.get("/hello", (req, res) => {
 });
 
 app.get("/urls", (req, res) => {
+  const user = getUserFromReq(req)
+
   const templateVars = {
     urls: urlDatabase,
-    user: users[req.cookies.user_id]
+    user: user
   };
   res.render("urls_index", templateVars);
 });
 
 app.get("/urls/new", (req, res) => {
+  const user = getUserFromReq(req)
+  if (!user) {
+    res.redirect("/login")
+    return
+  }
   const templateVars =
   {
-    user: users[req.cookies.user_id]
+    user: user
   }
   res.render("urls_new", templateVars);
+
 });
 
 app.get("/urls/:id", (req, res) => {
+  const longURL = urlDatabase[req.params.id]
   console.log(req.params)
+  if (!longURL) {
+    res.send ("url doesnt exist")
+    return
+  }
   const templateVars = {
     id: req.params.id,
-    longURL: urlDatabase[req.params.id],
+    longURL: longURL,
     user: users[req.cookies.user_id]
   };
   res.render("urls_show", templateVars);
@@ -80,9 +103,14 @@ app.get("/urls/:id", (req, res) => {
 
 
 app.post("/urls", (req, res) => {
-  console.log(req.body); // Log the POST request body to the console
-  // WHOLE POINT OF THIS IS TO SAVE A LONG URL- TO THE URL DATABASE
+  const user = getUserFromReq(req)
+  console.log(req.body);
   const randomString = generateRandomString()
+  if (!user) {
+    res.send("Please log in to create new url ")
+    return
+  }
+
 
   const longURL = req.body.longURL
   urlDatabase[randomString] = longURL
@@ -92,29 +120,37 @@ app.post("/urls", (req, res) => {
 
 app.get("/u/:id", (req, res) => {
   const longURL = urlDatabase[req.params.id]
+  if (!longURL) {
+    res.send ("Short URL does not exist")
+    return
+  }
   res.redirect(longURL);
 });
 
 app.post("/urls/:id/delete", (req, res) => {
-  console.log(req.params.id); ///
+  
+  if (!urlDatabase[req.params.id]) {
+    res.send ("URL does not exist")
+    return
+  }
+
   delete urlDatabase[req.params.id];
   res.redirect("/urls")
 })
 app.post("/urls/:id/", (req, res) => {
+  if (!urlDatabase[req.params.id]) {
+    res.send ("URL does not exist")
+    return
+  }
   urlDatabase[req.params.id] = req.body.updatedUrl;
   res.redirect("/urls")
 })
 
 app.post("/login", (req, res) => {
-  // check for the email in the database
-  //if email is not found return 403 error
-  //if email found check for password 
-  // if password matches do line 127
-  // else throw 403 error 
   const user = userLookup(req.body.email)
   console.log(user)
   if (!user) {
-    return res.send(403)
+    return res.send("no user found with that email")
   } else if (req.body.password === user.password) {
     res.cookie("user_id", user.id);
     res.redirect("/urls")
@@ -132,12 +168,19 @@ app.post("/logout", (req, res) => {
 })
 
 app.get("/register", (req, res) => {
-  const templateVars =
-  {
-    user: users[req.cookies.user_id]
+  const user = getUserFromReq(req)
+  if (user) {
+    res.redirect("/urls")
+    return
+  }
+  const templateVars = {
+    user: user
   }
   res.render("urls_register", templateVars);
-});
+
+}
+
+);
 
 app.post("/register", (req, res) => {
   let user = userLookup(req.body.email)
@@ -166,13 +209,18 @@ app.post("/register", (req, res) => {
 }
 )
 app.get("/login", (req, res) => {
+  const user = getUserFromReq(req)
+  if (user) {
+    res.redirect("/urls")
+  } else {
+    const templateVars =
+    {
+      user: user
+    }
+    res.render("urls_login", templateVars);
 
-
-  const templateVars =
-  {
-    user: users[req.cookies.user_id]
   }
-  res.render("urls_login", templateVars);
+
 });
 
 
