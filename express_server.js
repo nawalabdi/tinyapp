@@ -3,6 +3,7 @@ const app = express();
 const PORT = 8080;
 const cookieSession = require("cookie-session");
 const bcrypt = require("bcryptjs");
+const {getUserByEmail} = require("./helpers.js")
 
 app.use(cookieSession({
   name: "session",
@@ -46,16 +47,6 @@ const users = {
     password: "dishwasher-funk",
   },
 };
-
-const userLookup = function (email) {
-  for (const item in users) {
-    if (email === users[item].email) {
-      return users[item]
-    }
-  }
-  return null
-}
-
 const getUserFromReq = function (req) {
   const userID = req.session.user_id
   const user = users[userID]
@@ -202,7 +193,7 @@ app.post("/urls/:id/", (req, res) => {
 })
 
 app.post("/login", (req, res) => {
-  const user = userLookup(req.body.email)
+  const user =  getUserByEmail(req.body.email)
   if (!user) {
    return res.status(400).send("no user found with that email")
   } else if (bcrypt.compareSync(req.body.password,user.password)) {
@@ -237,7 +228,7 @@ app.get("/register", (req, res) => {
 );
 
 app.post("/register", (req, res) => {
-  let user = userLookup(req.body.email)
+  let user =  getUserByEmail(req.body.email)
   if (req.body.email === "" || req.body.password === "") {
     return res.send(400)
   }
