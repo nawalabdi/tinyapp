@@ -88,8 +88,6 @@ app.get("/urls", (req, res) => {
     return;
   }
   const urlDatabase = urlsForUser(req.session.user_id);
-  console.log("database",urlDatabase);
-
   const templateVars = {
     urls: urlDatabase,
     user: user
@@ -197,8 +195,7 @@ app.post("/urls/:id/", (req, res) => {
   const longURL = req.body.longURL;
   const userID = req.session.user_id;
   urlDatabase[shortURL] = { longURL, userID };
-  console.log("longurl",longURL);
-  console.log("shorturl",shortURL);
+
 
   urlDatabase[shortURL].longURL = longURL;
   res.redirect("/urls");
@@ -207,7 +204,6 @@ app.post("/urls/:id/", (req, res) => {
 // POST route for /login
 app.post("/login", (req, res) => {
   const user = getUserByEmail(req.body.email, users);
-  console.log("this is the user " ,user);
   if (!user) {
     return res.status(400).send("no user found with that email");
   } else if (bcrypt.compareSync(req.body.password, user.password)) {
@@ -219,9 +215,10 @@ app.post("/login", (req, res) => {
 
   }
 });
+
 //should redirect user to to urlspage check user registration form assignment 
 app.post("/logout",(req, res) => {
-  console.log(req.body);
+
   res.clearCookie("session");
   res.redirect("/login");
 });
@@ -238,9 +235,7 @@ app.get("/register", (req, res) => {
   };
   res.render("urls_register", templateVars);
 
-}
-
-);
+});
 
 //route to POST to /register
 app.post("/register", (req, res) => {
@@ -263,11 +258,8 @@ app.post("/register", (req, res) => {
   users[randomUserID] = newUser;
   req.session.user_id = randomUserID;
   res.redirect("/urls");
-  console.log(users);
+});
 
-
-}
-);
 app.get("/login", (req, res) => {
   const user = getUserFromReq(req);
   if (user) {
@@ -278,16 +270,9 @@ app.get("/login", (req, res) => {
       user: user
     };
     res.render("urls_login", templateVars);
-
   }
-
 });
-
-
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
-
-
-generateRandomString();
