@@ -1,6 +1,6 @@
 const express = require("express");
 const app = express();
-const PORT = 8020;
+const PORT = 8080;
 const cookieSession = require("cookie-session");
 const bcrypt = require("bcryptjs");
 const { getUserByEmail } = require("./helpers.js");
@@ -18,7 +18,7 @@ app.use(express.urlencoded({ extended: true }));
 
 
 // generates random string
-function generateRandomString() {
+const generateRandomString = function() {
   return (Math.random().toString(36).substr(2, 6));
 }
 
@@ -84,7 +84,7 @@ app.get("/hello", (req, res) => {
 app.get("/urls", (req, res) => {
   const user = getUserFromReq(req);
   if (!user) {
-    res.send("please log in to view");
+    res.send("Please <a href=\"/login\">login</a> or <a href=\"/register\">register</a> to view URLs page.");
     return;
   }
   const urlDatabase = urlsForUser(req.session.user_id);
@@ -112,6 +112,7 @@ app.get("/urls/new", (req, res) => {
 
 });
 
+// Edit URL page route.
 app.get("/urls/:id", (req, res) => {
   const user = getUserFromReq(req);
   if (!user) {
