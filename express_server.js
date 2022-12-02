@@ -1,5 +1,6 @@
 const express = require("express");
 const cookieParser = require('cookie-parser')
+const bcrypt = require("bcryptjs");
 
 
 const app = express();
@@ -8,6 +9,8 @@ app.set("view engine", "ejs");
 
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser())
+
+
 
 function generateRandomString() {
   return (Math.random().toString(36).substr(2, 6))
@@ -208,7 +211,7 @@ app.post("/login", (req, res) => {
   console.log(user)
   if (!user) {
    return res.status(400).send("no user found with that email")
-  } else if (req.body.password === user.password) {
+  } else if (bcrypt.compareSync(req.body.password,user.password)) {
     res.cookie("user_id", user.id);
     res.redirect("/urls")
   }
@@ -241,7 +244,6 @@ app.get("/register", (req, res) => {
 
 app.post("/register", (req, res) => {
   let user = userLookup(req.body.email)
-  console.log(user);
   if (req.body.email === "" || req.body.password === "") {
     return res.send(400)
   }
@@ -255,7 +257,7 @@ app.post("/register", (req, res) => {
   {
     id: randomUserID,
     email: req.body.email,
-    password: req.body.password
+    password: bcrypt.hashSync(req.body.password, 10),
   }
   users[randomUserID] = newUser
   res.cookie("user_id", randomUserID)
