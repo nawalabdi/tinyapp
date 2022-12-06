@@ -3,7 +3,13 @@ const app = express();
 const PORT = 8080;
 const cookieSession = require("cookie-session");
 const bcrypt = require("bcryptjs");
-const { getUserByEmail } = require("./helpers.js");
+const { 
+  getUserByEmail,
+  generateRandomString, 
+  urlsForUser,
+  getUserFromReq 
+} = require("./helpers.js");
+const { users, urlDatabase } = require('./database')
 
 app.use(cookieSession({
   name: "session",
@@ -17,55 +23,51 @@ app.use(express.urlencoded({ extended: true }));
 
 
 
-// generates random string
-const generateRandomString = function() {
-  return (Math.random().toString(36).substr(2, 6));
-}
 
 
-const urlDatabase = {
-  b6UTxQ: {
-    longURL: "https://www.tsn.ca",
-    userID: "aJ48lW"
-  },
-  i3BoGr: {
-    longURL: "https://www.google.ca",
-    userID: "aJ48lW"
-  }
-};
+// const urlDatabase = {
+//   b6UTxQ: {
+//     longURL: "https://www.tsn.ca",
+//     userID: "aJ48lW"
+//   },
+//   i3BoGr: {
+//     longURL: "https://www.google.ca",
+//     userID: "aJ48lW"
+//   }
+// };
 
 
-const users = {
-  userRandomID: {
-    id: "userRandomID",
-    email: "user@example.com",
-    password: "purple-monkey-dinosaur",
-  },
-  user2RandomID: {
-    id: "user2RandomID",
-    email: "user2@example.com",
-    password: "dishwasher-funk",
-  },
-};
-const getUserFromReq = function(req) {
-  const userID = req.session.user_id;
-  const user = users[userID];
-  if (!user) {
-    return null;
-  }
-  return user;
+// const users = {
+//   userRandomID: {
+//     id: "userRandomID",
+//     email: "user@example.com",
+//     password: "purple-monkey-dinosaur",
+//   },
+//   user2RandomID: {
+//     id: "user2RandomID",
+//     email: "user2@example.com",
+//     password: "dishwasher-funk",
+//   },
+// };
+// const getUserFromReq = function(req) {
+//   const userID = req.session.user_id;
+//   const user = users[userID];
+//   if (!user) {
+//     return null;
+//   }
+//   return user;
 
-};
+// };
 
-const urlsForUser = function(id) {
-  const result = {};
-  for (const user in urlDatabase) {
-    if (id === urlDatabase[user].userID) {
-      result[user] = urlDatabase[user];
-    }
-  }
-  return result;
-};
+// const urlsForUser = function(id) {
+//   const result = {};
+//   for (const user in urlDatabase) {
+//     if (id === urlDatabase[user].userID) {
+//       result[user] = urlDatabase[user];
+//     }
+//   }
+//   return result;
+// };
 
 
 app.get("/", (req, res) => {
