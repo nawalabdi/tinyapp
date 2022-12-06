@@ -21,57 +21,13 @@ app.set("view engine", "ejs");
 
 app.use(express.urlencoded({ extended: true }));
 
-
-
-
-
-// const urlDatabase = {
-//   b6UTxQ: {
-//     longURL: "https://www.tsn.ca",
-//     userID: "aJ48lW"
-//   },
-//   i3BoGr: {
-//     longURL: "https://www.google.ca",
-//     userID: "aJ48lW"
-//   }
-// };
-
-
-// const users = {
-//   userRandomID: {
-//     id: "userRandomID",
-//     email: "user@example.com",
-//     password: "purple-monkey-dinosaur",
-//   },
-//   user2RandomID: {
-//     id: "user2RandomID",
-//     email: "user2@example.com",
-//     password: "dishwasher-funk",
-//   },
-// };
-// const getUserFromReq = function(req) {
-//   const userID = req.session.user_id;
-//   const user = users[userID];
-//   if (!user) {
-//     return null;
-//   }
-//   return user;
-
-// };
-
-// const urlsForUser = function(id) {
-//   const result = {};
-//   for (const user in urlDatabase) {
-//     if (id === urlDatabase[user].userID) {
-//       result[user] = urlDatabase[user];
-//     }
-//   }
-//   return result;
-// };
-
-
 app.get("/", (req, res) => {
-  res.send("Hello!");
+  const user = getUserFromReq(req);
+  if (!user) {
+    return res.redirect('/login')
+  } 
+
+  return res.redirect('/urls')
 });
 
 app.get("/urls.json", (req, res) => {
@@ -115,22 +71,27 @@ app.get("/urls/new", (req, res) => {
 // Edit URL page route.
 app.get("/urls/:id", (req, res) => {
   const user = getUserFromReq(req);
+
   if (!user) {
     return res.send("Error, please login to access");
-
   }
+
+  if (!urlDatabase[req.params.id]) {
+    return res.send("Invalid short URL");
+  }
+
   if (urlDatabase[req.params.id].userID !== req.session.user_id) {
     return res.send("This URL doesnt belong to you");
-
   }
-  const longURL = urlDatabase[req.params.id].longURL;
-  if (!longURL) {
+
+  const urlObj = urlDatabase[req.params.id];
+  if (!urlObj) {
     return res.send("url doesnt exist");
   }
   const templateVars = {
     id: req.params.id,
-    longURL: longURL,
-    user: users[req.session.user_id]
+    longURL: urlObj.longURL,
+    user,
   };
   res.render("urls_show", templateVars);
 });
@@ -138,16 +99,15 @@ app.get("/urls/:id", (req, res) => {
 //POST Route to Receive the Form Submission
 app.post("/urls", (req, res) => {
   const user = getUserFromReq(req);
-  const randomString = generateRandomString();
   if (!user) {
     res.send("Please log in or register to see URL's");
     return;
   }
+  const randomString = generateRandomString();
   const longURL = req.body.longURL;
   const userID = req.session.user_id;
   urlDatabase[randomString] = { longURL, userID };
   res.redirect(`/urls/${randomString}`);
-
 });
 
 //Redirect Short URLs
@@ -181,41 +141,39 @@ app.post("/urls/:id/delete", (req, res) => {
 //POST route for /urls/:id to edit a resource
 app.post("/urls/:id/", (req, res) => {
   const shortURL = req.params.id;
-  
-  if (!urlDatabase[shortURL]) {
-    res.status(400).send("URL does not exist");
-    return;
-  }
+
   if (!req.session.user_id) {
     return res.status(401).send("Your not logged in");
   }
+
+  if (!urlDatabase[shortURL]) {
+    return res.status(400).send("URL does not exist");
+  }
+
   if (urlDatabase[shortURL].userID !== req.session.user_id) {
     return res.status(403).send("This URL doesnt belong to you");
-
   }
   
   const longURL = req.body.longURL;
-  const userID = req.session.user_id;
-  urlDatabase[shortURL] = { longURL, userID };
-
-
+  // const userID = req.session.user_id;
   urlDatabase[shortURL].longURL = longURL;
   res.redirect("/urls");
 });
 
 // POST route for /login
 app.post("/login", (req, res) => {
-  const user = getUserByEmail(req.body.email, users);
+  const user = getUserByEmail(req.body.email);
+
   if (!user) {
     return res.status(400).send("no user found with that email");
-  } else if (bcrypt.compareSync(req.body.password, user.password)) {
-    req.session.user_id = user.id;
-    res.redirect("/urls");
-
-  } else {
-    return res.send(403);
-
+  } 
+  
+  if (!bcrypt.compareSync(req.body.password, user.password)) {
+    return res.status(403).send("Invalid password, please try again");
   }
+
+  req.session.user_id = user.id;
+  res.redirect("/urls");
 });
 
 //should redirect user to to urlspage check user registration form assignment 
@@ -242,13 +200,15 @@ app.get("/register", (req, res) => {
 //route to POST to /register
 app.post("/register", (req, res) => {
   let user = getUserByEmail(req.body.email);
-  if (req.body.email === "" || req.body.password === "") {
-    return res.send(400);
-  }
-  if (user) {
-    return res.send("Email already registered", 400);
 
+  if (req.body.email === "" || req.body.password === "") {
+    return res.status(400).send("Email or password cannot be empty") ;
   }
+
+  if (user) {
+    return res.status(400).send("Email already registered");
+  }
+
   const randomUserID = generateRandomString();
 
   let newUser =
@@ -262,6 +222,7 @@ app.post("/register", (req, res) => {
   res.redirect("/urls");
 });
 
+// a GET request visits the login page
 app.get("/login", (req, res) => {
   const user = getUserFromReq(req);
   if (user) {
