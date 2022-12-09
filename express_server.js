@@ -38,7 +38,7 @@ app.get("/hello", (req, res) => {
   res.send("<html><body>Hello <b>World</b></body></html>\n");
 });
 
-// route for urls
+// Home Page
 app.get("/urls", (req, res) => {
   const user = getUserFromReq(req);
   if (!user) {
@@ -53,7 +53,7 @@ app.get("/urls", (req, res) => {
   res.render("urls_index", templateVars);
 });
 
-//route that show the form 
+// Create new URL page route
 app.get("/urls/new", (req, res) => {
   const user = getUserFromReq(req);
   if (!user) {
@@ -96,7 +96,7 @@ app.get("/urls/:id", (req, res) => {
   res.render("urls_show", templateVars);
 });
 
-//POST Route to Receive the Form Submission
+//save longURL and userID to urlDatabase, and shorten url and redirects
 app.post("/urls", (req, res) => {
   const user = getUserFromReq(req);
   if (!user) {
@@ -120,7 +120,7 @@ app.get("/u/:id", (req, res) => {
   res.redirect(longURL);
 });
 
-// POST route for /urls/:id/delete to remove URLs
+// route deletes URLS
 app.post("/urls/:id/delete", (req, res) => {
 
   if (!urlDatabase[req.params.id]) {
@@ -182,7 +182,7 @@ app.post("/logout",(req, res) => {
   res.redirect("/login");
 });
 
-//route renders the registration template
+// directs user to registration page and calls the user_registration.ejs.
 app.get("/register", (req, res) => {
   const user = getUserFromReq(req);
   if (user) {
@@ -221,7 +221,7 @@ app.post("/register", (req, res) => {
   res.redirect("/urls");
 });
 
-// a GET request visits the login page
+ // Login page route.
 app.get("/login", (req, res) => {
   const user = getUserFromReq(req);
   if (user) {
