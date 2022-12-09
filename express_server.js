@@ -112,7 +112,7 @@ app.post("/urls", (req, res) => {
 
 //Redirect Short URLs
 app.get("/u/:id", (req, res) => {
-  const longURL = urlDatabase[req.params.id];
+  const longURL = urlDatabase[req.params.id].longURL;
   if (!longURL) {
     res.send("Short URL does not exist");
     return;
@@ -155,7 +155,6 @@ app.post("/urls/:id/", (req, res) => {
   }
   
   const longURL = req.body.longURL;
-  // const userID = req.session.user_id;
   urlDatabase[shortURL].longURL = longURL;
   res.redirect("/urls");
 });
